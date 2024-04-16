@@ -34,21 +34,6 @@ enum Relationship(val s: String) {
   case addsTo    extends Relationship("addsTo")
 }
 
-// TODO: unnecessary, read stat names from global.trn after stripping prefix + suffix
-enum StatKey(val name: String) {
-  case StatChangeStrength            extends StatKey("Strength")
-  case StatChangeDexterity           extends StatKey("Dexterity")
-  case StatChangeVitality            extends StatKey("Vitality")
-  case StatChangeIntelligence        extends StatKey("Intelligence")
-  case StatChangeSpirit              extends StatKey("Spirit")
-  case StatChangeAttack              extends StatKey("Attack")
-  case DamageMult                    extends StatKey("% Damage")
-  case StatChangeResistanceFire      extends StatKey("Fire Resistance")
-  case StatChangeResistanceCold      extends StatKey("Cold Resistance")
-  case StatChangeResistanceLightning extends StatKey("Lightning Resistance")
-  case StatChangeResistancePoison    extends StatKey("Poison Resistance")
-}
-
 // Parsers
 
 val hspace: P[Unit]     = P.charIn(" \t").void
