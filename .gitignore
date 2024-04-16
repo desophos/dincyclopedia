@@ -1,0 +1,6 @@
+.bsp
+.bloop
+.metals
+.vscode
+out
+*.log
