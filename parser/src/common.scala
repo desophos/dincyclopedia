@@ -36,6 +36,12 @@ enum Relationship(val s: String) {
 
 case class RelationshipTo(relationship: Relationship, title: String)
 
+case class ParsedEntry(
+    title: String,
+    parent: Option[RelationshipTo],
+    keywords: Map[String, String],
+)
+
 // Parsers
 
 val hspace: P[Unit]     = P.charIn(" \t").void
