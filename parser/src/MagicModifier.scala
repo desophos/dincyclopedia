@@ -3,6 +3,10 @@ package dincyclopedia.parser
 import scala.collection.View
 import scala.collection.immutable.SortedMap
 
+import dincyclopedia.model
+import dincyclopedia.model.*
+
+import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.effect.IO
 import cats.implicits.*
@@ -10,51 +14,29 @@ import cats.parse.Parser
 import org.legogroup.woof.Logger
 import os.SubPath
 
-case class MagicModifier private (
-    prefix: Boolean,
-    magicRequirement: Option[String],
-    itemTypeRequirement: Option[String],
-    cursed: Boolean,
-    ego: Boolean,
-    spawnChance: Double,
-    proc: Option[MagicModifier.Proc],
-    stats: Map[String, MagicModifier.StatValue],
-    levels: Map[Int, MagicModifier.Leveled],
-) extends Entry
-
-object MagicModifier extends Parsable[MagicModifier] {
-  case class StatValue(base: Double, perLevel: Double)
-
-  case class Proc private (
-      skill: String,
-      chance: Double,
-      level: StatValue,
-  )
-
+object MagicModifier {
   object Proc {
     def apply(
         keywords: Map[String, String]
-    )(using Logger[IO]): OptionT[IO, Proc] = {
+    )(using Logger[IO]): OptionT[IO, model.MagicModifier.Proc] = {
       for {
         skill         <- OptionT fromOption keywords.get("OnHitSkill")
         chance        <- parseKeyword[Double](keywords, "SkillChance")
         levelBase     <- parseKeyword[Double](keywords, "SkillLevelBase")
         levelPerLevel <- parseKeyword[Double](keywords, "SkillLevelPerLevel")
-      } yield Proc(skill, chance, StatValue(levelBase, levelPerLevel))
+      } yield model.MagicModifier.Proc(
+        skill,
+        chance,
+        ScalingStat(levelBase, levelPerLevel),
+      )
     }
   }
-
-  case class Leveled private (
-      name: String,
-      requirementsMult: Double = 1.0,
-      availableAtMaxLevel: Boolean = false,
-  )
 
   object Leveled {
     def apply(
         baseName: Option[String],
         keywords: Map[String, String],
-    )(using Logger[IO]): OptionT[IO, Leveled] = {
+    )(using Logger[IO]): OptionT[IO, model.MagicModifier.AtLevel] = {
       val availableAtMaxLevel = keywords.get("AvailableAtMaxLevel").isDefined
       val name = keywords.getOrElse("Name", baseName.get) // One of these should always be defined
       parseKeywordOrElse[Double](
@@ -62,7 +44,7 @@ object MagicModifier extends Parsable[MagicModifier] {
         "RequirementsMult",
         1.0,
       ).map(requirementsMult =>
-        Leveled(name, requirementsMult, availableAtMaxLevel)
+        model.MagicModifier.AtLevel(name, requirementsMult, availableAtMaxLevel)
       )
     }
   }
@@ -70,7 +52,7 @@ object MagicModifier extends Parsable[MagicModifier] {
   def apply(
       keywords: Map[String, String],
       leveledEntries: View[(String, Map[String, String])],
-  )(using Logger[IO]): OptionT[IO, MagicModifier] = {
+  )(using Logger[IO]): OptionT[IO, model.MagicModifier] = {
     val name                = keywords.get("Name")
     val magicRequirement    = keywords.get("MagicRequirement")
     val itemTypeRequirement = keywords.get("ItemTypeRequirement")
@@ -84,8 +66,10 @@ object MagicModifier extends Parsable[MagicModifier] {
         )
         .map((k, v) =>
           (
-            k.stripPrefix("StatChange")
-              .stripPrefix("DynamicStatMult")
+            Parsable.statPrefixes
+              .map(k.stripPrefix)
+              .find(_ != k)
+              .getOrElse(k)
               .stripSuffix(suffix),
             v.toDouble,
           )
@@ -95,7 +79,7 @@ object MagicModifier extends Parsable[MagicModifier] {
     val perLevelStats = getStats("PerLevel")
 
     val stats = baseStats
-      .map((baseK, baseV) => (baseK, StatValue(baseV, perLevelStats(baseK))))
+      .map((baseK, baseV) => (baseK, ScalingStat(baseV, perLevelStats(baseK))))
       .unsorted
 
     Proc(keywords).value
@@ -126,7 +110,7 @@ object MagicModifier extends Parsable[MagicModifier] {
             }
             .unNone
             .sequence
-        } yield MagicModifier(
+        } yield model.MagicModifier(
           prefix,
           magicRequirement,
           itemTypeRequirement,
@@ -142,32 +126,39 @@ object MagicModifier extends Parsable[MagicModifier] {
       .flatten
       .optionT
   }
+}
 
+given Parsable[model.MagicModifier] with {
   override val path = SubPath("""Database\MagicModifiers""")
 
   override def parser(using
       Logger[IO]
-  ): Parser[OptionT[IO, Map[String, MagicModifier]]] =
+  ): Parser[OptionT[IO, Map[String, model.MagicModifier]]] = {
+    val groupEntriesByBase: NonEmptyList[ParsedEntry] => Map[
+      Option[String],
+      View[(String, Map[String, String])],
+    ] =
+      _.groupMap(entry =>
+        entry.parent match {
+          case None         => entry.title
+          case Some(parent) => parent.title
+        }
+      )(_.keywords).view
+        .mapValues(sameTitleEntries => sameTitleEntries.reduceLeft(_ ++ _)) // we end up with the latest value of every keyword
+        .groupBy((_, keywords) => keywords.get("Base"))
+
     entries
-      .map {
-        _.groupMap { case ((title, relationshipPair), _) =>
-          relationshipPair match {
-            case None                         => title
-            case Some(relationship, original) => original
-          }
-        } { (_, keywords) => keywords }.view
-          .mapValues(sameTitleEntries => sameTitleEntries.reduceLeft(_ ++ _))
-          .groupBy((_, keywords) => keywords.get("Base"))
-      }
+      .map(groupEntriesByBase)
       .map { entriesByBase =>
         entriesByBase(Some("BaseMagicModifier")).toList
           .traverse((title, keywords) =>
             MagicModifier(
               keywords,
               entriesByBase(Some(title)), // .map((_, keywords) => keywords),
-            ).withContext(Title(title)) tupleLeft title
-              .stripPrefix("BaseModifier")
+            ).withContext(Title(title))
+              .tupleLeft(title.stripPrefix("BaseModifier"))
           )
           .map(_.toMap)
       }
+  }
 }
