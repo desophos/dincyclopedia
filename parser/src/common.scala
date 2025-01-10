@@ -1,5 +1,7 @@
 package dincyclopedia.parser
 
+import dincyclopedia.model.*
+
 import cats.Show
 import cats.data.NonEmptyList
 import cats.data.OptionT
