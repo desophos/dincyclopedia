@@ -1,4 +1,4 @@
-package soldaktools
+package dincyclopedia.parser
 package test
 
 import MagicModifier.StatValue

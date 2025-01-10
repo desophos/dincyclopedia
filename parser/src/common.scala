@@ -1,4 +1,4 @@
-package soldaktools
+package dincyclopedia.parser
 
 import cats.Show
 import cats.data.NonEmptyList

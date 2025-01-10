@@ -1,4 +1,4 @@
-package soldaktools
+package dincyclopedia.parser
 
 import scala.util.matching.Regex
 
