@@ -98,6 +98,12 @@ trait KeywordParser[T] {
   }
 }
 
+given KeywordParser[String] with {
+  extension (value: String) {
+    def parse(keyword: String) = value.asRight
+  }
+}
+
 given KeywordParser[Boolean] with {
   extension (value: String) {
     def parse(keyword: String) = value match {
