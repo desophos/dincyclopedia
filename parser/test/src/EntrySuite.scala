@@ -1,25 +1,26 @@
 package dincyclopedia.parser
 package test
 
-import MagicModifier.StatValue
+import dincyclopedia.model.*
+
 import cats.effect.IO
-import cats.effect.Resource
+import munit.CatsEffectSuite
 import org.legogroup.woof.*
-import weaver.*
 
-object EntrySuite extends IOSuite {
-  override type Res = Logger[IO]
-  override def sharedResource: Resource[IO, Res] =
-    DefaultLogger.makeIo(consoleOutput).toResource
+class EntrySuite extends CatsEffectSuite {
+  val logger = ResourceSuiteLocalFixture(
+    "logger",
+    makeConsoleLogger.toResource,
+  )
 
-  def parsedSuccessfully[A <: Entry](p: Parsable[A])(logger: Logger[IO]) = {
-    given Logger[IO] = logger
+  override def munitFixtures = List(logger)
+
+  def parsedSuccessfully[A <: Entry: Parsable](using Logger[IO]) =
     for {
-      data <- p.parseFiles.value
+      data <- Parsable[A].parseFiles.value
     } yield {
-      expect(data.exists(_.nonEmpty))
+      assert(data.exists(_.nonEmpty))
     }
-  }
 
   extension (m: MagicModifier) {
     def hasStat(name: String, base: Double, perLevel: Double) =
@@ -28,16 +29,28 @@ object EntrySuite extends IOSuite {
       )
   }
 
-  test("Loc parsed successfully")(parsedSuccessfully(Loc))
+  // test("Skill keyword types parsed") { logger =>
+  //   given Logger[IO] = logger
+  //   for {
 
-  test("MagicModifiers parsed successfully")(parsedSuccessfully(MagicModifier))
+  //   } yield {}
+  // }
 
-  test("AttackAndDamageMult parsed correctly") { logger =>
-    given Logger[IO] = logger
+  test("Loc parsed successfully") {
+    given Logger[IO] = logger()
+    parsedSuccessfully[Loc]
+  }
+
+  test("MagicModifiers parsed successfully") {
+    given Logger[IO] = logger()
+    parsedSuccessfully[MagicModifier]
+  }
+
+  test("AttackAndDamageMult parsed correctly") {
     for {
-      data <- MagicModifier.parseFiles.value
+      data <- Parsable[MagicModifier].parseFiles(using logger()).value
     } yield {
-      expect(
+      assert(
         data.exists { ms =>
           val m = ms("AttackAndDamageMult")
           m.prefix == false
@@ -48,12 +61,11 @@ object EntrySuite extends IOSuite {
     }
   }
 
-  test("ProcArcaneSwarm parsed correctly") { logger =>
-    given Logger[IO] = logger
+  test("ProcArcaneSwarm parsed correctly") {
     for {
-      data <- MagicModifier.parseFiles.value
+      data <- Parsable[MagicModifier].parseFiles(using logger()).value
     } yield {
-      expect(data.exists { ms =>
+      assert(data.exists { ms =>
         val m = ms("ProcArcaneSwarm")
         m.prefix == false
         && m.spawnChance == 0.25
@@ -62,7 +74,7 @@ object EntrySuite extends IOSuite {
         && m.proc.exists(p =>
           p.skill == "SkillItemProcArcaneSwarm"
             && p.chance == 0.075
-            && p.level == StatValue(1, 0.2534)
+            && p.level == ScalingStat(1, 0.2534)
         )
       })
     }
