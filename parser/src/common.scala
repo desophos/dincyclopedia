@@ -73,22 +73,25 @@ val blankLines0: P0[Unit] = blankLine.backtrack.rep0.void
 val openBraceLine: P[Unit]  = openBrace *> linebreak
 val closeBraceLine: P[Unit] = closeBrace *> linebreak
 
-val titleLine: P[(String, Option[(Relationship, String)])] =
-  (word <* hspaces.?) ~ ((relationshipWord <* hspaces) ~ word).? <* linebreak
+val titleLine: P[(String, Option[RelationshipTo])] =
+  (word <* hspaces.?) ~ ((relationshipWord <* hspaces) ~ word)
+    .map(RelationshipTo.apply)
+    .? <* linebreak
 
 val keywordLine: P[(String, String)] =
   hspaces.?.with1 *> keywordAndValue <* hspaces.? <* comment.? <* linebreak
 
-val entry: P[((String, Option[(Relationship, String)]), Map[String, String])] =
+val entry: P[ParsedEntry] =
   titleLine ~ (blankLines0.with1 *> keywordLine <* blankLines0.backtrack)
     // .surroundedBy(blankLines0)
     .rep0 // entries can be empty
     .between(openBraceLine, closeBraceLine)
-    .map(_.toMap)
+    .map(_.toMap) map { case ((title, relationship), keywords) =>
+    ParsedEntry(title, relationship, keywords)
+  }
 
-val entries: P[
-  NonEmptyList[((String, Option[(Relationship, String)]), Map[String, String])]
-] = entry.surroundedBy(blankLines0).rep <* P.end
+val entries: P[NonEmptyList[ParsedEntry]] =
+  entry.surroundedBy(blankLines0).rep <* P.end
 
 // Helpers
 
