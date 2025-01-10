@@ -4,22 +4,8 @@ import mill.scalajslib.api._
 import mill.scalalib._
 import scalafmt._
 
-trait SoldakToolsModule extends ScalaModule with ScalafmtModule {
-  def scalaVersion = "3.3.1"
-  // def scalaJSVersion = "1.15.0"
-
-  def catsCoreV       = "2.10.0"
-  def catsEffectV     = "3.5.2"
-  def catsParseV      = "1.0.0"
-  def shapelessV      = "3.3.0"
-  def circeV          = "0.14.6"
-  def circeTaggedAdtV = "0.11.0"
-  def refinedV        = "0.11.0"
-  def woofV           = "0.7.0"
-  def osLibV          = "0.9.1"
-
-  def http4sV    = "1.0.0-M40"
-  def http4sDomV = "0.2.10"
+trait DincyclopediaModule extends ScalaModule with ScalafmtModule {
+  def scalaVersion = "3.4.2"
 
   def scalacOptions = Seq(
     "-explain",
@@ -35,33 +21,76 @@ trait SoldakToolsModule extends ScalaModule with ScalafmtModule {
     "-Wunused:imports",
   )
 
-  // def moduleKind = T(ModuleKind.CommonJSModule)
-
-  // def jsEnvConfig = T(
-  //   JsEnvConfig.Selenium(JsEnvConfig.Selenium.ChromeOptions(false))
-  // )
+  val catsCoreV       = "2.10.0"
+  val catsEffectV     = "3.5.2"
+  val catsParseV      = "1.0.0"
+  val kittensV        = "3.4.0"
+  val shapelessV      = "3.3.0"
+  val circeV          = "0.14.6"
+  val circeTaggedAdtV = "0.11.0"
+  val refinedV        = "0.11.0"
+  val woofV           = "0.7.0"
+  val osLibV          = "0.9.1"
+  val http4sV         = "1.0.0-M41"
+  val http4sDomV      = "0.2.11"
 }
 
-trait SoldakToolsTestModule extends TestModule.Weaver {
-  def munitV           = "1.0.0-M10"
-  def munitCatsEffectV = "2.0.0-M4"
+trait DincyclopediaJSModule extends DincyclopediaModule with ScalaJSModule {
+  def scalaJSVersion = "1.16.0"
+}
+
+trait DincyclopediaTestModule extends TestModule.Munit {
+  val circeV             = "0.14.6"
+  val munitV             = "1.0.0"
+  val munitCatsEffectV   = "2.0.0"
+  val disciplineV        = "2.0.0"
+  val scalacheckDerivedV = "0.5.0"
 
   def ivyDeps = Agg(
-    ivy"org.scalameta::munit:$munitV",
-    ivy"org.scalameta::munit-scalacheck:$munitV",
-    ivy"org.typelevel::munit-cats-effect:$munitCatsEffectV",
-    ivy"com.disneystreaming::weaver-cats:0.8.3",
+    ivy"org.scalameta::munit::$munitV",
+    ivy"org.scalameta::munit-scalacheck::$munitV",
+    ivy"org.typelevel::munit-cats-effect::$munitCatsEffectV",
+    ivy"org.typelevel::discipline-munit::$disciplineV",
+    ivy"io.circe::circe-testing::$circeV",
+    ivy"io.github.martinhh::scalacheck-derived::$scalacheckDerivedV",
   )
 }
 
-object soldaktools extends RootModule with SoldakToolsModule {
-  def moduleDeps = Seq(parser, api)
-
-  object test extends ScalaTests with SoldakToolsTestModule {
-    def moduleDeps = super.moduleDeps ++ Seq(parser.test, api.test)
+object `package` extends RootModule with DincyclopediaModule {
+  def resources = T {
+    os.makeDir(T.dest / "webapp")
+    val jsPath = ui.fastLinkJS().dest.path
+    os.copy(jsPath / "main.js", T.dest / "webapp" / "main.js")
+    os.copy(jsPath / "main.js.map", T.dest / "webapp" / "main.js.map")
+    super.resources() ++ Seq(PathRef(T.dest))
   }
 
-  object parser extends SoldakToolsModule {
+  object model extends Module {
+    trait Shared extends DincyclopediaModule with PlatformScalaModule {
+      def ivyDeps = Agg(
+        ivy"org.typelevel::cats-core::$catsCoreV",
+        ivy"org.typelevel::kittens::$kittensV",
+        ivy"io.circe::circe-core::$circeV",
+        ivy"io.circe::circe-generic::$circeV",
+        ivy"eu.timepit::refined::$refinedV",
+        ivy"org.legogroup::woof-core::$woofV",
+      )
+    }
+
+    object jvm extends Shared {
+      object test extends ScalaTests with DincyclopediaTestModule
+    }
+
+    object js extends Shared with DincyclopediaJSModule {
+      object test extends ScalaJSTests with DincyclopediaTestModule
+    }
+  }
+
+  object parser extends DincyclopediaModule {
+    def mainClass = Some("dincyclopedia.parser.JsonParser")
+
+    def moduleDeps = Seq(model.jvm)
+
     def ivyDeps = Agg(
       ivy"org.typelevel::cats-core:$catsCoreV",
       ivy"org.typelevel::cats-effect:$catsEffectV",
@@ -71,58 +100,28 @@ object soldaktools extends RootModule with SoldakToolsModule {
       ivy"org.legogroup::woof-core:$woofV",
     )
 
-    object test extends ScalaTests with SoldakToolsTestModule
+    object test extends ScalaTests with DincyclopediaTestModule
   }
 
-  object api extends SoldakToolsModule {
+  object ui extends DincyclopediaJSModule {
+    def scalaJSDomV = "2.8.0"
+    def calicoV     = "0.2.2"
+
+    def moduleDeps = Seq(model.js)
+
     def ivyDeps = Agg(
-      ivy"org.typelevel::cats-core:$catsCoreV",
-      ivy"org.typelevel::cats-effect:$catsEffectV",
-      // ivy"org.typelevel::shapeless3-deriving:$shapelessV",
-      ivy"org.http4s::http4s-circe:$http4sV",
-      ivy"org.http4s::http4s-dsl:$http4sV",
-      ivy"org.http4s::http4s-client:$http4sV",
-      ivy"org.http4s::http4s-ember-client:$http4sV",
-      ivy"io.circe::circe-core:$circeV",
-      ivy"io.circe::circe-generic:$circeV",
-      ivy"io.circe::circe-literal:$circeV",
-      ivy"io.circe::circe-parser:$circeV",
-      ivy"org.latestbit::circe-tagged-adt-codec:$circeTaggedAdtV",
-      ivy"eu.timepit::refined:$refinedV",
-      ivy"org.legogroup::woof-core:$woofV",
+      ivy"org.scala-js::scalajs-dom::$scalaJSDomV",
+      ivy"com.armanbilge::calico::$calicoV",
+      ivy"io.circe::circe-core::$circeV",
+      ivy"io.circe::circe-generic::$circeV",
+      ivy"io.circe::circe-literal::$circeV",
+      ivy"io.circe::circe-parser::$circeV",
+      ivy"org.http4s::http4s-client::$http4sV",
+      ivy"org.http4s::http4s-dom::$http4sDomV",
     )
 
-    object test extends ScalaTests with SoldakToolsTestModule
+    def moduleKind = T(ModuleKind.CommonJSModule)
+
+    object test extends ScalaJSTests with DincyclopediaTestModule
   }
-
-//  object ui extends SoldakToolsModule {
-//    def moduleKind = T(ModuleKind.CommonJSModule)
-//
-//    def scalaJSDomV = "2.4.0"
-//    def calicoV     = "0.2.1"
-//
-//    def moduleDeps = Seq(api)
-//
-//    def ivyDeps = Agg(
-//      ivy"org.scala-js::scalajs-dom::$scalaJSDomV",
-//      ivy"com.armanbilge::calico::$calicoV",
-//      ivy"org.http4s::http4s-client::$http4sV",
-//      ivy"org.http4s::http4s-dom::$http4sDomV",
-//    )
-//  }
-}
-
-/** Update the millw script.
-  */
-def millw() = T.command {
-  val target = mill.util.Util.download(
-    "https://raw.githubusercontent.com/lefou/millw/main/millw.ps1"
-  )
-  val millw = build.millSourcePath / "mill"
-  os.copy.over(target.path, millw)
-  os.perms.set(
-    millw,
-    os.perms(millw) + java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE,
-  )
-  target
 }
