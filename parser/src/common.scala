@@ -34,6 +34,8 @@ enum Relationship(val s: String) {
   case addsTo    extends Relationship("addsTo")
 }
 
+case class RelationshipTo(relationship: Relationship, title: String)
+
 // Parsers
 
 val hspace: P[Unit]     = P.charIn(" \t").void
