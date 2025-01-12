@@ -41,15 +41,17 @@ object DincyclopediaApp extends IOWebApp {
 class DataStore(val magicModifiers: Map[String, LeveledMagicModifier])
 
 object DataStore {
-  def makeUrl[A](using storage: JsonStorage[A]): URL =
-    URL(f"${storage.filename}.json", DincyclopediaApp.BASE_URL)
+  def makeUrl[A: JsonStorage]: URL =
+    URL(f"${JsonStorage[A].filename}.json", DincyclopediaApp.BASE_URL)
 
-  def getData[A <: Entry: Decoder](using Logger[IO])(using
-      storage: JsonStorage[A]
+  def getData[A <: Entry: Decoder: JsonStorage](using
+      Logger[IO]
   ): OptionT[IO, Map[String, A]] =
     fetchResponseJson(makeUrl[A].toString)
       .flatMap(_.as[Map[String, A]].logLeftToOption)
-      .flatTapNone(Logger[IO].error(f"Couldn't get ${storage.filename} data"))
+      .flatTapNone(
+        Logger[IO].error(f"Couldn't get ${JsonStorage[A].filename} data")
+      )
 
   def apply(using Logger[IO]): Resource[IO, DataStore] = (for {
     magicModifiers <- getData[MagicModifier]

@@ -11,8 +11,8 @@ import io.circe.Encoder
 import org.legogroup.woof.Logger
 
 object JsonParser extends IOApp {
-  def makePath[A](using storage: JsonStorage[A]) =
-    os.pwd / "data" / s"${storage.filename}.json"
+  def makePath[A: JsonStorage] =
+    os.pwd / "data" / s"${JsonStorage[A].filename}.json"
 
   def writeFile[A <: Entry: Parsable: Encoder: JsonStorage](using Logger[IO]) =
     Parsable[A].filesToJson.map(json =>
