@@ -124,4 +124,11 @@ object `package` extends RootModule with DincyclopediaModule {
 
     object test extends ScalaJSTests with DincyclopediaTestModule
   }
+
+  def test = Task {
+    model.jvm.test.test()()
+    model.js.test.test()()
+    parser.test.test()()
+    ui.test.test()()
+  }
 }
