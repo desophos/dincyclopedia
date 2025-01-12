@@ -16,7 +16,7 @@ trait DincyclopediaModule extends ScalaModule with ScalafmtModule {
     "-no-indent",
     "-Xfatal-warnings",
     "-Xmax-inlines",
-    "128",
+    "256",
     "-Ysafe-init",
     "-Wunused:imports",
   )
