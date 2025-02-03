@@ -121,8 +121,7 @@ object MagicModifier {
           leveledPairs.toMap,
         )
       )
-      .map(_.value)
-      .flatten
+      .flatMap(_.value)
       .optionT
   }
 }
@@ -145,5 +144,5 @@ given Parsable[model.MagicModifier] with {
               .tupleLeft(title.stripPrefix("BaseModifier"))
           )
           .map(_.toMap)
-  }
+      }
 }
