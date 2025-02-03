@@ -5,7 +5,6 @@ import dincyclopedia.model.given
 
 import io.circe.testing.CodecTests
 import io.circe.testing.instances.*
-import io.github.martinhh.derived.scalacheck.given
 import munit.DisciplineSuite
 
 class ModelSuite extends DisciplineSuite {
