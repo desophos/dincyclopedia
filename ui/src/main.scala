@@ -16,7 +16,7 @@ object DincyclopediaApp extends IOWebApp {
   def render: Resource[IO, HtmlElement[IO]] = for {
     logger <- makeConsoleLogger.toResource
     given Logger[IO] = logger
-    data <- DataStore.apply
+    data <- DataStore(BASE_URL)
     view <- div(
       children[String](name =>
         data.magicModifiers(name).toHtmlResource(name)
