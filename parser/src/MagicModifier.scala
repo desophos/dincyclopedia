@@ -6,7 +6,6 @@ import scala.collection.immutable.SortedMap
 import dincyclopedia.model
 import dincyclopedia.model.*
 
-import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.effect.IO
 import cats.implicits.*
@@ -133,22 +132,9 @@ given Parsable[model.MagicModifier] with {
 
   override def parser(using
       Logger[IO]
-  ): Parser[OptionT[IO, Map[String, model.MagicModifier]]] = {
-    val groupEntriesByBase: NonEmptyList[ParsedEntry] => Map[
-      Option[String],
-      View[(String, Map[String, String])],
-    ] =
-      _.groupMap(entry =>
-        entry.parent match {
-          case None         => entry.title
-          case Some(parent) => parent.title
-        }
-      )(_.keywords).view
-        .mapValues(sameTitleEntries => sameTitleEntries.reduceLeft(_ ++ _)) // we end up with the latest value of every keyword
-        .groupBy((_, keywords) => keywords.get("Base"))
-
+  ): Parser[OptionT[IO, Map[String, model.MagicModifier]]] =
     entries
-      .map(groupEntriesByBase)
+      .map(Parsable.groupEntries)
       .map { entriesByBase =>
         entriesByBase(Some("BaseMagicModifier")).toList
           .traverse((title, keywords) =>
@@ -159,6 +145,5 @@ given Parsable[model.MagicModifier] with {
               .tupleLeft(title.stripPrefix("BaseModifier"))
           )
           .map(_.toMap)
-      }
   }
 }

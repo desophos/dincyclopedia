@@ -1,10 +1,13 @@
 package dincyclopedia.parser
 
+import scala.collection.MapView
+import scala.collection.View
 import scala.collection.mutable.StringBuilder
 
 import dincyclopedia.model.*
 
 import cats.Semigroup
+import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.effect.IO
 import cats.implicits.*
@@ -77,6 +80,40 @@ trait Parsable[A <: Entry] {
 
 object Parsable {
   def apply[A <: Entry](using p: Parsable[A]): Parsable[A] = p
+
+  def groupEntriesByTitle(
+      parsedEntries: NonEmptyList[ParsedEntry]
+  ): MapView[String, NonEmptyList[Map[String, String]]] =
+    parsedEntries
+      .groupMap(entry =>
+        entry.parent match {
+          case None         => entry.title
+          case Some(parent) => parent.title
+        }
+      )(_.keywords)
+      .view
+
+  // Take the latest value of every keyword.
+  def combineSameTitleEntries(
+      entriesByTitle: MapView[String, NonEmptyList[Map[String, String]]]
+  ): MapView[String, Map[String, String]] =
+    entriesByTitle.mapValues(sameTitleEntries =>
+      sameTitleEntries.reduceLeft(_ ++ _)
+    )
+
+  def groupEntriesByBase(
+      combinedEntries: MapView[String, Map[String, String]]
+  ): Map[
+    Option[String],
+    View[(String, Map[String, String])],
+  ] =
+    combinedEntries.groupBy((_, keywords) => keywords.get("Base"))
+
+  val groupEntries: NonEmptyList[ParsedEntry] => Map[
+    Option[String],
+    View[(String, Map[String, String])],
+  ] =
+    groupEntriesByTitle andThen combineSameTitleEntries andThen groupEntriesByBase
 
   private val basePath = Path(
     """C:\Users\desop\personal\for games\soldak\Din's Legacy"""
