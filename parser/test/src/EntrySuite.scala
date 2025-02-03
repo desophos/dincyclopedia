@@ -50,14 +50,27 @@ class EntrySuite extends CatsEffectSuite {
     for {
       data <- Parsable[MagicModifier].parseFiles(using logger()).value
     } yield {
-      assert(
-        data.exists { ms =>
-          val m = ms("AttackAndDamageMult")
-          m.prefix == false
-          && m.hasStat("DamageMult", 0.1, 0.015)
-          && m.hasStat("Attack", 5.0, 3.0)
-        }
-      )
+      assert(data.exists(_.contains("AttackAndDamageMult")))
+      val m = data.get("AttackAndDamageMult")
+      assert(!m.prefix)
+      assert(m.hasStat("DamageMult", 0.1, 0.015))
+      assert(m.hasStat("Attack", 5.0, 3.0))
+      assert(m.levels.nonEmpty)
+      assert(m.leveled.nonEmpty)
+      val m4 = m.leveled(3)
+      assertEquals(m4.name, "$$AttackAndDamageMultModifierName4$$")
+      assert(!m4.availableAtMaxLevel)
+      assert(!m4.cursed)
+      assert(!m4.ego)
+      assert(m4.itemTypeRequirement.isEmpty)
+      assert(m4.magicRequirement.isEmpty)
+      assert(!m4.prefix)
+      assert(m4.proc.isEmpty)
+      assertEqualsDouble(m4.requirementsMult, 1.0, 0.00001)
+      assertEqualsDouble(m4.spawnChance, 1.0, 0.00001)
+      assert(m4.stats.nonEmpty)
+      assertEqualsDouble(m4.stats("DamageMult"), 0.325, 0.00001)
+      assertEqualsDouble(m4.stats("Attack"), 50.0, 0.00001)
     }
   }
 
