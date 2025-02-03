@@ -45,6 +45,7 @@ trait DincyclopediaTestModule extends TestModule.Munit {
   val munitCatsEffectV   = "2.0.0"
   val disciplineV        = "2.0.0"
   val scalacheckDerivedV = "0.5.0"
+  val catsScalacheckV    = "0.3.2"
 
   def ivyDeps = Agg(
     ivy"org.scalameta::munit::$munitV",
@@ -53,6 +54,7 @@ trait DincyclopediaTestModule extends TestModule.Munit {
     ivy"org.typelevel::discipline-munit::$disciplineV",
     ivy"io.circe::circe-testing::$circeV",
     ivy"io.github.martinhh::scalacheck-derived::$scalacheckDerivedV",
+    ivy"io.chrisdavenport::cats-scalacheck::$catsScalacheckV",
   )
 }
 
