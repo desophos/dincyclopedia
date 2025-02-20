@@ -44,7 +44,7 @@ extension [F[_], A](fa: F[Option[A]]) {
 
 extension [F[_]: Applicative, A](fa: List[OptionT[F, A]]) {
   def unNone: F[List[A]] =
-fa.map(_.value)
+    fa.map(_.value)
       .sequence[F, Option[A]]
       .map(_.collect { case Some(value) => value })
 }
