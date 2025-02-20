@@ -32,4 +32,20 @@ class ParsableSuite extends ScalaCheckSuite {
       assertEquals(entries.length, groupedEntries.values.map(_.length).sum)
     }
   }
+
+  property("combineSameTitleEntries") {
+    forAll(entriesByTitleWithMatchingKeyword) {
+      (
+          keyword: String,
+          lastValue: String,
+          entries: MapView[String, NonEmptyList[Map[String, String]]],
+      ) =>
+        val combinedEntries: MapView[String, Map[String, String]] =
+          Parsable.combineSameTitleEntries(entries)
+
+        assert(combinedEntries.nonEmpty)
+        assertEquals(entries.keys.size, combinedEntries.keys.size)
+        assertEquals(lastValue, combinedEntries.values.head(keyword))
+    }
+  }
 }
