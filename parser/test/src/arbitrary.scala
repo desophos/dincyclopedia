@@ -31,13 +31,13 @@ def uniqueNelOfN[T](n: Int, g: Gen[T]): Gen[NonEmptyList[T]] = for {
   ts <- uniqueListOfN(n - 1, g)
 } yield NonEmptyList(t, ts)
 
-val sameTitleEntries = for {
+val sameTitleEntries: Gen[NonEmptyList[ParsedEntry]] = for {
   e     <- Arbitrary.arbitrary[ParsedEntry]
   es    <- Gen.nonEmptyListOf(Arbitrary.arbitrary[ParsedEntry])
   title <- nonEmptyAsciiString
 } yield NonEmptyList(e, es).map(_.copy(title = title, parent = None))
 
-val differentTitleEntries = for {
+val differentTitleEntries: Gen[NonEmptyList[ParsedEntry]] = for {
   e  <- Arbitrary.arbitrary[ParsedEntry]
   es <- Gen.nonEmptyListOf(Arbitrary.arbitrary[ParsedEntry])
   nel = NonEmptyList(e, es)
