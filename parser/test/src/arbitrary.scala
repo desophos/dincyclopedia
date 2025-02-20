@@ -11,6 +11,8 @@ import org.scalacheck.Gen
 given Arbitrary[ParsedEntry]               = deriveArbitrary
 given Arbitrary[NonEmptyList[ParsedEntry]] = deriveArbitrary
 
+val nonEmptyAsciiString = Gen.nonEmptyStringOf(Gen.asciiChar)
+
 def uniqueListOfN[T](n: Int, g: Gen[T]): Gen[List[T]] = {
 
   def nonDuplicates[T](existing: List[T], toAdd: LazyList[T]): List[T] = {
@@ -32,12 +34,12 @@ def uniqueNelOfN[T](n: Int, g: Gen[T]): Gen[NonEmptyList[T]] = for {
 val sameTitleEntries = for {
   e     <- Arbitrary.arbitrary[ParsedEntry]
   es    <- Gen.nonEmptyListOf(Arbitrary.arbitrary[ParsedEntry])
-  title <- Gen.nonEmptyStringOf(Gen.asciiChar)
+  title <- nonEmptyAsciiString
 } yield NonEmptyList(e, es).map(_.copy(title = title, parent = None))
 
 val differentTitleEntries = for {
   e  <- Arbitrary.arbitrary[ParsedEntry]
   es <- Gen.nonEmptyListOf(Arbitrary.arbitrary[ParsedEntry])
   nel = NonEmptyList(e, es)
-  titles <- uniqueNelOfN(nel.length, Gen.nonEmptyStringOf(Gen.asciiChar))
+  titles <- uniqueNelOfN(nel.length, nonEmptyAsciiString)
 } yield nel.zipWith(titles)((e, title) => e.copy(title = title, parent = None))
