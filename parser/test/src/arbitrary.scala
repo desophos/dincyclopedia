@@ -1,5 +1,7 @@
 package dincyclopedia.parser.test
 
+import scala.collection.MapView
+
 import dincyclopedia.parser.ParsedEntry
 
 import cats.data.NonEmptyList
@@ -43,3 +45,17 @@ val differentTitleEntries: Gen[NonEmptyList[ParsedEntry]] = for {
   nel = NonEmptyList(e, es)
   titles <- uniqueNelOfN(nel.length, nonEmptyAsciiString)
 } yield nel.zipWith(titles)((e, title) => e.copy(title = title, parent = None))
+
+val entriesByTitleWithMatchingKeyword: Gen[
+  (String, String, MapView[String, NonEmptyList[Map[String, String]]])
+] =
+  for {
+    title <- nonEmptyAsciiString
+    e     <- Gen.nonEmptyMap(Gen.zip(nonEmptyAsciiString, nonEmptyAsciiString))
+    es <- Gen.nonEmptyListOf(
+      for {
+        m <- Gen.nonEmptyMap(Gen.zip(nonEmptyAsciiString, nonEmptyAsciiString))
+        v <- nonEmptyAsciiString
+      } yield m + ((e.keys.head, v))
+    )
+  } yield (e.keys.head, es.last(e.keys.head), MapView((title, NonEmptyList(e, es))))
