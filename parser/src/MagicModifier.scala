@@ -99,9 +99,10 @@ object MagicModifier {
               ).ifM(
                 OptionT.none, // BaseOnly 1 means not a real leveled entry
                 for {
-                  itemLevel <- parseKeyword[Int](
+                  itemLevel <- parseKeywordOrElse[Int](
                     leveledKeywords,
                     "ItemLevel",
+0,
                   )
                   leveled <- Leveled(name, leveledKeywords)
                 } yield (itemLevel, leveled),
