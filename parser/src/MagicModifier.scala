@@ -81,17 +81,11 @@ object MagicModifier {
       .map((baseK, baseV) => (baseK, ScalingStat(baseV, perLevelStats(baseK))))
       .unsorted
 
-    Proc(keywords).value
-      .map(proc =>
-        for {
-          prefix <- parseKeyword[Boolean](keywords, "Prefix")
-          spawnChance <- parseKeywordOrElse[Double](
-            keywords,
-            "SpawnChance",
-            1.0,
-          )
-          leveledPairs <- leveledEntries.toList
-            .map { (leveledTitle, leveledKeywords) =>
+    OptionT(
+      for {
+        proc <- Proc(keywords).value
+          leveledPairs <- leveledEntries.toList.map {
+(leveledTitle, leveledKeywords) =>
               parseKeywordOrElse[Boolean](
                 leveledKeywords,
                 "BaseOnly",
@@ -107,9 +101,14 @@ object MagicModifier {
                   leveled <- Leveled(name, leveledKeywords)
                 } yield (itemLevel, leveled),
               ).withContext(LeveledTitle(leveledTitle))
-            }
-            .unNone
-            .sequence
+            }.unNone
+            magicModifier <- (for {
+          prefix <- parseKeyword[Boolean](keywords, "Prefix")
+          spawnChance <- parseKeywordOrElse[Double](
+            keywords,
+            "SpawnChance",
+            1.0,
+          )
         } yield model.MagicModifier(
           prefix,
           magicRequirement,
@@ -120,11 +119,10 @@ object MagicModifier {
           proc,
           stats,
           leveledPairs.toMap,
-        )
+        )).value
+      } yield magicModifier
       )
-      .flatMap(_.value)
-      .optionT
-  }
+        }
 }
 
 given Parsable[model.MagicModifier] with {

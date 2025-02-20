@@ -1,11 +1,11 @@
 package dincyclopedia.model
 
-import cats.Functor
+import cats.Applicative
 import cats.Show
 import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.effect.IO
-import cats.syntax.all.*
+import cats.implicits.*
 import org.legogroup.woof.*
 import org.legogroup.woof.Logger.withLogContext
 import org.legogroup.woof.given
@@ -42,8 +42,11 @@ extension [F[_], A](fa: F[Option[A]]) {
   def optionT: OptionT[F, A] = OptionT(fa)
 }
 
-extension [F[_]: Functor, A](fa: List[OptionT[F, A]]) {
-  def unNone = fa.filter(_.isDefined == IO.pure(true))
+extension [F[_]: Applicative, A](fa: List[OptionT[F, A]]) {
+  def unNone: F[List[A]] =
+fa.map(_.value)
+      .sequence[F, Option[A]]
+      .map(_.collect { case Some(value) => value })
 }
 
 extension [F[_]: Logger, A](fa: F[A]) {
