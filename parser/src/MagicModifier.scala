@@ -2,6 +2,7 @@ package dincyclopedia.parser
 
 import scala.collection.View
 import scala.collection.immutable.SortedMap
+import scala.util.Try
 
 import dincyclopedia.model
 import dincyclopedia.model.*
@@ -11,6 +12,7 @@ import cats.effect.IO
 import cats.implicits.*
 import cats.parse.Parser
 import org.legogroup.woof.Logger
+import org.legogroup.woof.given
 import os.SubPath
 
 object MagicModifier {
@@ -37,13 +39,21 @@ object MagicModifier {
         keywords: Map[String, String],
     )(using Logger[IO]): OptionT[IO, model.MagicModifier.AtLevel] = {
       val availableAtMaxLevel = keywords.get("AvailableAtMaxLevel").isDefined
-      val name = keywords.getOrElse("Name", baseName.get) // One of these should always be defined
-      parseKeywordOrElse[Double](
-        keywords,
-        "RequirementsMult",
-        1.0,
-      ).map(requirementsMult =>
-        model.MagicModifier.AtLevel(name, requirementsMult, availableAtMaxLevel)
+      for {
+        name <- OptionT
+          .fromOption(Try(keywords.getOrElse("Name", baseName.get)).toOption)
+          .flatTapNone(
+            Logger[IO].error("MagicModifier is missing both Name and BaseName")
+          )
+        requirementsMult <- parseKeywordOrElse[Double](
+          keywords,
+          "RequirementsMult",
+          1.0,
+        )
+      } yield model.MagicModifier.AtLevel(
+        name,
+        requirementsMult,
+        availableAtMaxLevel,
       )
     }
   }
@@ -84,25 +94,25 @@ object MagicModifier {
     OptionT(
       for {
         proc <- Proc(keywords).value
-          leveledPairs <- leveledEntries.toList.map {
-(leveledTitle, leveledKeywords) =>
-              parseKeywordOrElse[Boolean](
-                leveledKeywords,
-                "BaseOnly",
-                false,
-              ).ifM(
-                OptionT.none, // BaseOnly 1 means not a real leveled entry
-                for {
-                  itemLevel <- parseKeywordOrElse[Int](
-                    leveledKeywords,
-                    "ItemLevel",
-0,
-                  )
-                  leveled <- Leveled(name, leveledKeywords)
-                } yield (itemLevel, leveled),
-              ).withContext(LeveledTitle(leveledTitle))
-            }.unNone
-            magicModifier <- (for {
+        leveledPairs <- leveledEntries.toList.map {
+          (leveledTitle, leveledKeywords) =>
+            parseKeywordOrElse[Boolean](
+              leveledKeywords,
+              "BaseOnly",
+              false,
+            ).ifM(
+              OptionT.none, // BaseOnly 1 means not a real leveled entry
+              for {
+                itemLevel <- parseKeywordOrElse[Int](
+                  leveledKeywords,
+                  "ItemLevel",
+                  0,
+                )
+                leveled <- Leveled(name, leveledKeywords)
+              } yield (itemLevel, leveled),
+            ).withContext(LeveledTitle(leveledTitle))
+        }.unNone
+        magicModifier <- (for {
           prefix <- parseKeyword[Boolean](keywords, "Prefix")
           spawnChance <- parseKeywordOrElse[Double](
             keywords,
@@ -121,8 +131,8 @@ object MagicModifier {
           leveledPairs.toMap,
         )).value
       } yield magicModifier
-      )
-        }
+    )
+  }
 }
 
 given Parsable[model.MagicModifier] with {
