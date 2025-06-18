@@ -87,8 +87,8 @@ object MagicModifier {
     OptionT(
       for {
         proc <- Proc(keywords).value
-        leveledPairs <- leveledEntries.toList.map {
-          (leveledTitle, leveledKeywords) =>
+        leveledPairs <- leveledEntries.toList
+          .map((leveledTitle, leveledKeywords) =>
             parseKeywordOrElse[Boolean](
               leveledKeywords,
               "BaseOnly",
@@ -104,6 +104,8 @@ object MagicModifier {
                 leveled <- Leveled(name, leveledKeywords)
               } yield (itemLevel, leveled),
             ).withContext(LeveledTitle(leveledTitle))
+          )
+          .unNone
         magicModifier <- (
           for {
             prefix <- parseKeyword[Boolean](keywords, "Prefix")
