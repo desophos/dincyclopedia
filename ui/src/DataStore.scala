@@ -5,7 +5,6 @@ import dincyclopedia.model.given
 
 import calico.*
 import calico.html.io.*
-import cats.Show
 import cats.data.OptionT
 import cats.effect.*
 import io.circe.Decoder
@@ -34,7 +33,6 @@ object DataStore {
       .map { (name, value) => value.leveled.map(_.name).zip(value.leveled) }
       .flatten
       .toMap
-    _ <- OptionT.liftF(debugTrace(leveledMagicModifiers))
   } yield new DataStore(leveledMagicModifiers))
     .getOrRaise(new RuntimeException("Failed to construct DataStore"))
     .toResource

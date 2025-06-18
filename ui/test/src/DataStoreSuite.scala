@@ -27,8 +27,6 @@ class DataStoreSuite extends CatsEffectSuite {
   test("MagicModifiers retrieved successfully") {
     given Logger[IO] = logger()
     val data         = dataStore()
-    for {
-      _ <- debugTrace(data.magicModifiers.keys.toList)
-    } yield assert(data.magicModifiers.nonEmpty)
+    assert(data.magicModifiers.nonEmpty)
   }
 }
