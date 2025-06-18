@@ -46,6 +46,19 @@ class EntrySuite extends CatsEffectSuite {
     parsedSuccessfully[MagicModifier]
   }
 
+  test("Leveled MagicModifiers parsed successfully") {
+    given Logger[IO] = logger()
+    for {
+      data <- Parsable[MagicModifier].parseFiles.value
+    } yield {
+      assert(data.exists(_.nonEmpty))
+      assert(
+        data.get.values.forall(_.leveled.nonEmpty),
+        data.get.filter((_, v) => v.leveled.isEmpty).keys,
+      )
+    }
+  }
+
   test("AttackAndDamageMult parsed correctly") {
     for {
       data <- Parsable[MagicModifier].parseFiles(using logger()).value
