@@ -40,18 +40,13 @@ object MagicModifier {
     )(using Logger[IO]): OptionT[IO, model.MagicModifier.AtLevel] = {
       val availableAtMaxLevel = keywords.get("AvailableAtMaxLevel").isDefined
       for {
-        name <- OptionT
-          .fromOption(Try(keywords.getOrElse("Name", baseName.get)).toOption)
-          .flatTapNone(
-            Logger[IO].error("MagicModifier is missing both Name and BaseName")
-          )
         requirementsMult <- parseKeywordOrElse[Double](
           keywords,
           "RequirementsMult",
           1.0,
         )
       } yield model.MagicModifier.AtLevel(
-        name,
+        keywords.getOrElse("Name", baseName.getOrElse("[No Display Name]")),
         requirementsMult,
         availableAtMaxLevel,
       )
