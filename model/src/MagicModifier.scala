@@ -1,5 +1,7 @@
 package dincyclopedia.model
 
+import scala.collection.immutable.SortedMap
+
 import cats.Eq
 import cats.derived.*
 
@@ -12,7 +14,7 @@ case class MagicModifier(
     spawnChance: Double,
     proc: Option[MagicModifier.Proc],
     stats: Map[String, ScalingStat],
-    levels: Map[Int, MagicModifier.AtLevel],
+    levels: SortedMap[Int, MagicModifier.AtLevel],
 ) extends Entry
     derives Eq {
   def leveled: List[LeveledMagicModifier] = levels
