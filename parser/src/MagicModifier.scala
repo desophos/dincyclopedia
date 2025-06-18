@@ -132,6 +132,9 @@ object MagicModifier {
 }
 
 given Parsable[model.MagicModifier] with {
+  val blacklist =
+    List("EnhancementAll", "EnhancementLivingOnly") // abstract base modifiers
+
   override val path = SubPath("""Database\MagicModifiers""")
 
   override def parser(using
@@ -148,6 +151,6 @@ given Parsable[model.MagicModifier] with {
             ).withContext(Title(title))
               .tupleLeft(title.stripPrefix("BaseModifier"))
           )
-          .map(_.toMap)
+          .map(_.filterNot((name, _) => blacklist.contains(name)).toMap)
       }
 }
