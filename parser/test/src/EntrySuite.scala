@@ -63,7 +63,7 @@ class EntrySuite extends CatsEffectSuite {
       assert(!m4.cursed)
       assert(!m4.ego)
       assert(m4.itemTypeRequirement.isEmpty)
-      assert(m4.magicRequirement.isEmpty)
+      assertEquals(m4.magicRequirement, Some("Weapon"))
       assert(!m4.prefix)
       assert(m4.proc.isEmpty)
       assertEqualsDouble(m4.requirementsMult, 1.0, 0.00001)
