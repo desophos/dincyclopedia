@@ -2,7 +2,6 @@ package dincyclopedia.parser
 
 import scala.collection.View
 import scala.collection.immutable.SortedMap
-import scala.util.Try
 
 import dincyclopedia.model
 import dincyclopedia.model.*
@@ -12,7 +11,6 @@ import cats.effect.IO
 import cats.implicits.*
 import cats.parse.Parser
 import org.legogroup.woof.Logger
-import org.legogroup.woof.given
 import os.SubPath
 
 object MagicModifier {
