@@ -106,25 +106,26 @@ object MagicModifier {
                 leveled <- Leveled(name, leveledKeywords)
               } yield (itemLevel, leveled),
             ).withContext(LeveledTitle(leveledTitle))
-        }.unNone
-        magicModifier <- (for {
-          prefix <- parseKeyword[Boolean](keywords, "Prefix")
-          spawnChance <- parseKeywordOrElse[Double](
-            keywords,
-            "SpawnChance",
-            1.0,
+        magicModifier <- (
+          for {
+            prefix <- parseKeyword[Boolean](keywords, "Prefix")
+            spawnChance <- parseKeywordOrElse[Double](
+              keywords,
+              "SpawnChance",
+              1.0,
+            )
+          } yield model.MagicModifier(
+            prefix,
+            magicRequirement,
+            itemTypeRequirement,
+            cursed,
+            ego,
+            spawnChance,
+            proc,
+            stats,
+            SortedMap.from(leveledPairs),
           )
-        } yield model.MagicModifier(
-          prefix,
-          magicRequirement,
-          itemTypeRequirement,
-          cursed,
-          ego,
-          spawnChance,
-          proc,
-          stats,
-          leveledPairs.toMap,
-        )).value
+        ).value
       } yield magicModifier
     )
   }
