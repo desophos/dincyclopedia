@@ -42,7 +42,7 @@ given ToHtml[LeveledMagicModifier] with {
         tableRow("Item Type Requirement", m.itemTypeRequirement), // : Option[String]
         tableRow("Cursed", boolean2option(m.cursed)), // : Boolean
         tableRow("Ego", boolean2option(m.ego)),       // : Boolean
-        tableRow("Spawn Chance", m.spawnChance),      // : Double
+        tableRow("Spawn Weight", m.spawnChance),      // : Double
         tableRow(
           "Requirements Multiplier",
           Option.unless(m.requirementsMult == 1)(m.requirementsMult),
