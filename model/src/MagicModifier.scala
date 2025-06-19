@@ -35,7 +35,13 @@ case class MagicModifier(
             (p.level.base + p.level.perLevel * level).round.toInt,
           )
         ),
-        stats.view.mapValues(s => s.base + s.perLevel * level).toMap,
+        stats.view
+          .mapValues(s =>
+            BigDecimal(s.base + s.perLevel * level)
+              .setScale(5, BigDecimal.RoundingMode.HALF_DOWN)
+              .toDouble
+          )
+          .toMap,
         atLevel.requirementsMult,
         atLevel.availableAtMaxLevel,
       )
