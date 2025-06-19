@@ -15,7 +15,8 @@ import fs2.dom.*
 def tableRow[A: Show](name: String, value: Option[A]) =
   value.map(v => tr(td(name), td(v.show)))
 
-def tableRow[A: Show](name: String, value: A) = tr(td(name), td(value.show))
+def tableRow[A: Show](name: String, value: A) =
+  tr(td(cls := "keyword-name", name), td(cls := "keyword-value", value.show))
 
 trait ToHtml[A] {
   extension (a: A) {
@@ -26,7 +27,8 @@ trait ToHtml[A] {
 given ToHtml[LeveledMagicModifier] with {
   extension (m: LeveledMagicModifier) {
     def toHtmlResource(title: String) = div(
-      h3(title),
+      cls := "card",
+      span(cls := "card-title", title),
       table(
         tableRow("Prefix", m.prefix),                      // : Boolean
         tableRow("Magic Requirement", m.magicRequirement), // : Option[String]
