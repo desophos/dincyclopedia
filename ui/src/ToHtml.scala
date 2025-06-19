@@ -31,10 +31,13 @@ given ToHtml[LeveledMagicModifier] with {
         tableRow("Prefix", m.prefix),                      // : Boolean
         tableRow("Magic Requirement", m.magicRequirement), // : Option[String]
         tableRow("Item Type Requirement", m.itemTypeRequirement), // : Option[String]
-        tableRow("Cursed", m.cursed),            // : Boolean
-        tableRow("Ego", m.ego),                  // : Boolean
-        tableRow("Spawn Chance", m.spawnChance), // : Double
-        tableRow("Requirements Multiplier", m.requirementsMult),
+        tableRow("Cursed", boolean2option(m.cursed)), // : Boolean
+        tableRow("Ego", boolean2option(m.ego)),       // : Boolean
+        tableRow("Spawn Chance", m.spawnChance),      // : Double
+        tableRow(
+          "Requirements Multiplier",
+          Option.unless(m.requirementsMult == 1)(m.requirementsMult),
+        ),
         tableRow("Available At Max Level", m.availableAtMaxLevel),
         tableRow("Proc Skill", m.proc.map(_.skill)), // : Option[MagicModifier.Proc]
         tableRow("Proc Chance", m.proc.map(_.chance)), // : Option[MagicModifier.Proc]
