@@ -36,6 +36,7 @@ given ToHtml[LeveledMagicModifier] with {
       cls := "card",
       span(cls := "card-title", title),
       table(
+        tableRow("Minimum Item Level", m.level),
         tableRow("Prefix", m.prefix),                      // : Boolean
         tableRow("Magic Requirement", m.magicRequirement), // : Option[String]
         tableRow("Item Type Requirement", m.itemTypeRequirement), // : Option[String]

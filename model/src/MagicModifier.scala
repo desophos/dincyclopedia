@@ -20,6 +20,7 @@ case class MagicModifier(
   def leveled: List[LeveledMagicModifier] = levels
     .map((level, atLevel) =>
       LeveledMagicModifier(
+        level,
         atLevel.name,
         prefix,
         magicRequirement,
@@ -57,6 +58,7 @@ object MagicModifier {
 }
 
 case class LeveledMagicModifier(
+    level: Int,
     name: String,
     prefix: Boolean,
     magicRequirement: Option[String],
