@@ -14,6 +14,8 @@ import org.legogroup.woof.given
 import org.scalajs.dom.Response
 import org.scalajs.dom.fetch
 
+def boolean2option(b: Boolean): Option[Boolean] = Option.when(b)(b)
+
 extension [A](p: Thenable[A]) {
   def toIO: IO[A] = IO.fromFuture(IO(p.toFuture))
 }
