@@ -12,11 +12,17 @@ import fs2.*
 import fs2.concurrent.Signal
 import fs2.dom.*
 
-def tableRow[A: Show](name: String, value: Option[A]) =
-  value.map(v => tr(td(name), td(v.show)))
-
-def tableRow[A: Show](name: String, value: A) =
+def tableRow[A: Show](
+    name: String,
+    value: A,
+): Resource[IO, HtmlTableRowElement[IO]] =
   tr(td(cls := "keyword-name", name), td(cls := "keyword-value", value.show))
+
+def tableRow[A: Show](
+    name: String,
+    value: Option[A],
+): Option[Resource[IO, HtmlTableRowElement[IO]]] =
+  value.map(v => tableRow(name, v))
 
 trait ToHtml[A] {
   extension (a: A) {
