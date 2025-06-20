@@ -50,9 +50,17 @@ object DataStore {
     magicModifiers <- getData[MagicModifier](baseUrl)
     leveledMagicModifiers <- OptionT.liftF(
       magicModifiers.toList
-        .map { (name, value) => value.leveled.map(_.name).zip(value.leveled) }
+        .map { (name, mm) => mm.leveled.map(_.name).zip(mm.leveled) }
+        .map(_.sortBy((_, mm) => mm.level))
         .flatten
-        .traverse((name, value) => localize(name).tupleRight(value))
+        .traverse((name, mm) =>
+          for {
+            localizedName <- localize(name)
+            localizedStats <- mm.stats.toList.traverse((statName, statValue) =>
+              localize(statName).tupleRight(statValue)
+            )
+          } yield (localizedName, mm.copy(stats = localizedStats.toMap))
+        )
         .map(_.toMap)
     )
   } yield new DataStore(leveledMagicModifiers))
