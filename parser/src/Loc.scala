@@ -35,7 +35,7 @@ given Parsable[model.Loc] with {
     val whitespace: Regex              = """\s+""".r
     val formatCode: Regex              = """\^[a-z]\d\d\d""".r
     val newlineContinueSentence: Regex = """\\n""".r
-    val newlineEndSentence: Regex      = """\\n\\n""".r
+    val newlineEndSentence: Regex      = """\.?\\n\\n""".r
 
     (blankLines0.backtrack.with1 *> keywordLine <* blankLines0.backtrack).rep
       .map(
