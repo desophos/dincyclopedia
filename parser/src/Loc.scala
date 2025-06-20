@@ -31,13 +31,22 @@ given Parsable[model.Loc] with {
 
   override def parser(using
       Logger[IO]
-  ): Parser[OptionT[IO, Map[String, model.Loc]]] =
+  ): Parser[OptionT[IO, Map[String, model.Loc]]] = {
+    val whitespace: Regex              = """\s+""".r
+    val formatCode: Regex              = """\^[a-z]\d\d\d""".r
+    val newlineContinueSentence: Regex = """\\n""".r
+    val newlineEndSentence: Regex      = """\\n\\n""".r
+
     (blankLines0.backtrack.with1 *> keywordLine <* blankLines0.backtrack).rep
       .map(
         _.toList.toMap.view
-          .mapValues(_.replace('\'', '"'))
+          .mapValues(formatCode.replaceAllIn(_, "")) // Remove format codes
+          .mapValues(newlineEndSentence.replaceAllIn(_, ". ")) // Replace these first so the next regex doesn't steal them
+          .mapValues(newlineContinueSentence.replaceAllIn(_, " "))
+          .mapValues(whitespace.replaceAllIn(_, " ").trim) // Remove extra whitespace
           .mapValues(model.Loc(_))
           .toMap
       )
       .map(OptionT.some.apply)
+  }
 }
