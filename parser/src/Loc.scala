@@ -34,14 +34,16 @@ given Parsable[model.Loc] with {
   ): Parser[OptionT[IO, Map[String, model.Loc]]] = {
     val whitespace: Regex              = """\s+""".r
     val formatCode: Regex              = """\^[a-z]\d\d\d""".r
-    val newlineContinueSentence: Regex = """\\n""".r
+    val newlineMargin: Regex           = """^\\n+|\\n+$""".r
     val newlineEndSentence: Regex      = """\.?\\n\\n""".r
+    val newlineContinueSentence: Regex = """\\n""".r
 
     (blankLines0.backtrack.with1 *> keywordLine <* blankLines0.backtrack).rep
       .map(
         _.toList.toMap.view
           .mapValues(formatCode.replaceAllIn(_, "")) // Remove format codes
-          .mapValues(newlineEndSentence.replaceAllIn(_, ". ")) // Replace these first so the next regex doesn't steal them
+          .mapValues(newlineMargin.replaceAllIn(_, "")) // Newline replacements need to be done in this order
+          .mapValues(newlineEndSentence.replaceAllIn(_, ". "))
           .mapValues(newlineContinueSentence.replaceAllIn(_, " "))
           .mapValues(whitespace.replaceAllIn(_, " ").trim) // Remove extra whitespace
           .mapValues(model.Loc(_))
