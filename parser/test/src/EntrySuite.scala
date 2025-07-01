@@ -23,9 +23,9 @@ class EntrySuite extends CatsEffectSuite {
     }
 
   extension (m: MagicModifier) {
-    def hasStat(name: String, base: Double, perLevel: Double) =
+    def hasStat(name: String, base: Double, perLevel: Double, bonus: Bonus) =
       m.stats.exists((k, v) =>
-        k == name && v.base == base && v.perLevel == perLevel
+        k == name && v.base == base && v.perLevel == perLevel && v.bonus == bonus
       )
   }
 
@@ -66,8 +66,8 @@ class EntrySuite extends CatsEffectSuite {
       assert(data.exists(_.contains("AttackAndDamageMult")))
       val m = data.get("AttackAndDamageMult")
       assert(!m.prefix)
-      assert(m.hasStat("DamageMult", 0.1, 0.015))
-      assert(m.hasStat("Attack", 5.0, 3.0))
+      assert(m.hasStat("DamageMult", 0.1, 0.015, Bonus.Mult))
+      assert(m.hasStat("Attack", 5.0, 3.0, Bonus.Flat))
       assert(m.levels.nonEmpty)
       assert(m.leveled.nonEmpty)
       val m4 = m.leveled(3)
@@ -96,11 +96,11 @@ class EntrySuite extends CatsEffectSuite {
         m.prefix == false
         && m.spawnChance == 0.25
         && m.magicRequirement.exists(_ == "Weapon")
-        && m.hasStat("Value", 7, 7)
+        && m.hasStat("Value", 7, 7, Bonus.Flat)
         && m.proc.exists(p =>
           p.skill == "SkillItemProcArcaneSwarm"
             && p.chance == 0.075
-            && p.level == ScalingStat(1, 0.2534)
+            && p.level == ScalingStat(1, 0.2534, Bonus.Flat)
         )
       })
     }

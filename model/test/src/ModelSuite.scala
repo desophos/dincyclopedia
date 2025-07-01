@@ -8,6 +8,7 @@ import io.circe.testing.instances.*
 import munit.DisciplineSuite
 
 class ModelSuite extends DisciplineSuite {
+  checkAll("ScalingStat", CodecTests[ScalingStat].codec)
   checkAll("Loc", CodecTests[Loc].codec)
   checkAll("MagicModifier", CodecTests[MagicModifier].codec)
   checkAll("Skill", CodecTests[Skill].codec)
