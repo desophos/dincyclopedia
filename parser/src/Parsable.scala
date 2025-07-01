@@ -124,13 +124,15 @@ object Parsable {
   private val doublePattern  = """^-?\d+(\.\d+)?$""".r
 
   final val statPrefixes = List(
-    "StatChange",
-    "StatMult",
-    "DynamicStatChange",
-    "DynamicStatMult",
-    "PassiveDynamicStatChange",
-    "PassiveDynamicStatMult",
     "DefendingDynamicStatChange",
     "DefendingDynamicStatMult",
+    "PassiveDynamicStatChange",
+    "PassiveDynamicStatMult",
+    "DynamicStatChange",
+    "DynamicStatMult",
+    "StatChange",
+    "StatMult",
   )
+
+  final val statPrefixPattern = s"^(${statPrefixes.mkString("|")})".r
 }

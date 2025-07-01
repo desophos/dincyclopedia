@@ -11,6 +11,7 @@ import cats.effect.IO
 import cats.implicits.*
 import cats.parse.Parser
 import org.legogroup.woof.Logger
+import org.legogroup.woof.given
 import os.SubPath
 
 object MagicModifier {
@@ -26,7 +27,7 @@ object MagicModifier {
       } yield model.MagicModifier.Proc(
         skill,
         chance,
-        ScalingStat(levelBase, levelPerLevel),
+        ScalingStat(levelBase, levelPerLevel, Bonus.Flat),
       )
     }
   }
@@ -66,27 +67,34 @@ object MagicModifier {
         .filter((k, _) =>
           k != suffix && !k.startsWith("SkillLevel") && k.endsWith(suffix)
         )
-        .map((k, v) =>
-          (
-            Parsable.statPrefixes
-              .map(k.stripPrefix)
-              .find(_ != k)
-              .getOrElse(k)
-              .stripSuffix(suffix),
-            v.toDouble,
-          )
-        )
+        .map((k, v) => (k.stripSuffix(suffix), v.toDouble))
 
     val baseStats     = getStats("Base")
     val perLevelStats = getStats("PerLevel")
 
-    val stats = baseStats
-      .map((baseK, baseV) => (baseK, ScalingStat(baseV, perLevelStats(baseK))))
-      .unsorted
+    val statsWithErrors: List[OptionT[IO, (String, ScalingStat)]] =
+      baseStats.toList.map((baseK, baseV) =>
+        Bonus
+          .fromKeyword(baseK)
+          .map(bonus =>
+            (
+              Parsable.statPrefixPattern.replaceFirstIn(baseK, ""),
+              ScalingStat(baseV, perLevelStats(baseK), bonus),
+            )
+          )
+          .fold(
+            Logger[IO]
+              .warn("Failed to parse bonus from stat")
+              .withContext(Keyword(baseK), Value(baseV.show))
+              .as(None)
+              .optionT
+          )(OptionT.some[IO](_))
+      )
 
     OptionT(
       for {
-        proc <- Proc(keywords).value
+        proc  <- Proc(keywords).value
+        stats <- statsWithErrors.unNone
         leveledPairs <- leveledEntries.toList
           .map((leveledTitle, leveledKeywords) =>
             parseKeywordOrElse[Boolean](
@@ -122,7 +130,7 @@ object MagicModifier {
             ego,
             spawnChance,
             proc,
-            stats,
+            stats.toMap,
             SortedMap.from(leveledPairs),
           )
         ).value
