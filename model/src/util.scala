@@ -1,6 +1,7 @@
 package dincyclopedia.model
 
 import cats.Applicative
+import cats.Monad
 import cats.Show
 import cats.data.NonEmptyList
 import cats.data.OptionT
@@ -47,6 +48,11 @@ extension [F[_]: Applicative, A](fa: List[OptionT[F, A]]) {
     fa.map(_.value)
       .sequence[F, Option[A]]
       .map(_.collect { case Some(value) => value })
+}
+
+extension [F[_]: Monad: Logger, A](fa: List[OptionT[F, A]]) {
+  def unNoneWithLogging: F[List[A]] =
+    fa.map(_.flatTapNone(Logger[F].warn("Found None during unNone"))).unNone
 }
 
 extension [F[_]: Logger, A](fa: F[A]) {
