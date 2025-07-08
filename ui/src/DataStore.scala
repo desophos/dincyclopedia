@@ -34,13 +34,15 @@ object DataStore {
     .split(" ")
     .toList
     .traverse(key =>
-      loc.get(key.stripPrefix("$$").stripSuffix("$$")) match {
-        case Some(value) => IO.pure(value)
-        case None =>
-          Logger[IO]
-            .warn(f"Missing localization")
-            .withContext(Unlocalized(key)) *> IO.pure(key)
-      }
+      if key.contains("$$") then
+        loc.get(key.stripPrefix("$$").stripSuffix("$$")) match {
+          case Some(value) => IO.pure(value)
+          case None =>
+            Logger[IO]
+              .warn(f"Missing localization")
+              .withContext(Unlocalized(key)) *> IO.pure(key)
+        }
+      else IO.pure(key)
     )
     .map(_.mkString(" "))
 
