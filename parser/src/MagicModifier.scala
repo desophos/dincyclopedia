@@ -91,50 +91,51 @@ object MagicModifier {
           )(OptionT.some[IO](_))
       )
 
-    OptionT(
-      for {
-        proc  <- Proc(keywords).value
-        stats <- statsWithErrors.unNone
-        leveledPairs <- leveledEntries.toList
-          .map((leveledTitle, leveledKeywords) =>
-            parseKeywordOrElse[Boolean](
-              leveledKeywords,
-              "BaseOnly",
-              false,
-            ).ifM(
-              OptionT.none, // BaseOnly 1 means not a real leveled entry
-              for {
-                itemLevel <- parseKeywordOrElse[Int](
-                  leveledKeywords,
-                  "ItemLevel",
-                  0,
-                )
-                leveled <- Leveled(name, leveledKeywords)
-              } yield (itemLevel, leveled),
-            ).withContext(LeveledTitle(leveledTitle))
-          )
-          .unNone
-        magicModifier <- (
+    val leveledPairsWithErrors
+        : List[OptionT[IO, (Int, model.MagicModifier.AtLevel)]] =
+      leveledEntries.toList.map((leveledTitle, leveledKeywords) =>
+        parseKeywordOrElse[Boolean](
+          leveledKeywords,
+          "BaseOnly",
+          false,
+        ).ifM(
+          OptionT.none, // BaseOnly 1 means not a real leveled entry
           for {
-            prefix <- parseKeyword[Boolean](keywords, "Prefix")
-            spawnChance <- parseKeywordOrElse[Double](
-              keywords,
-              "SpawnChance",
-              1.0,
+            itemLevel <- parseKeywordOrElse[Int](
+              leveledKeywords,
+              "ItemLevel",
+              0,
             )
-          } yield model.MagicModifier(
-            prefix,
-            magicRequirement,
-            itemTypeRequirement,
-            cursed,
-            ego,
-            spawnChance,
-            proc,
-            stats.toMap,
-            SortedMap.from(leveledPairs),
-          )
+            leveled <- Leveled(name, leveledKeywords)
+          } yield (itemLevel, leveled),
+        ).withContext(LeveledTitle(leveledTitle))
+      )
+
+    OptionT(
+      for { // IO
+        proc         <- Proc(keywords).value
+        stats        <- statsWithErrors.unNone
+        leveledPairs <- leveledPairsWithErrors.unNone
+        maybePrefix  <- parseKeyword[Boolean](keywords, "Prefix").value
+        maybeSpawnChance <- parseKeywordOrElse[Double](
+          keywords,
+          "SpawnChance",
+          1.0,
         ).value
-      } yield magicModifier
+      } yield for { // Option
+        prefix      <- maybePrefix
+        spawnChance <- maybeSpawnChance
+      } yield model.MagicModifier(
+        prefix,
+        magicRequirement,
+        itemTypeRequirement,
+        cursed,
+        ego,
+        spawnChance,
+        proc,
+        stats.toMap,
+        SortedMap.from(leveledPairs),
+      )
     )
   }
 }
